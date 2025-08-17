@@ -1,0 +1,814 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>JSON Compiler using Lex and Yacc</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+      .code-block {
+        background-color: #1e293b;
+        color: #e2e8f0;
+        font-family: "Courier New", monospace;
+        border-radius: 8px;
+        overflow-x: auto;
+      }
+      .token-highlight {
+        background-color: #3b82f6;
+        color: white;
+        padding: 2px 4px;
+        border-radius: 3px;
+        margin: 1px;
+        display: inline-block;
+      }
+      .error-highlight {
+        background-color: #ef4444;
+        color: white;
+      }
+      .success-highlight {
+        background-color: #10b981;
+        color: white;
+      }
+    </style>
+  </head>
+  <body class="bg-gray-100 min-h-screen">
+    <div class="container mx-auto px-4 py-8">
+      <!-- Header -->
+      <div class="text-center mb-8">
+        <h1 class="text-4xl font-bold text-gray-800 mb-4">
+          JSON Compiler using Lex and Yacc
+        </h1>
+        <p class="text-gray-600 max-w-3xl mx-auto">
+          A comprehensive JSON compiler implementation with syntax validation,
+          pretty printing, token tracking, and statistical analysis using Lex
+          and Yacc/Bison.
+        </p>
+      </div>
+
+      <h1 class="text-4xl font-bold text-gray-800 mb-4 text-center">Features</h1>
+            <!-- Features Overview -->
+      <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+        <div class="bg-white p-6 rounded-lg shadow-md">
+          <h3 class="text-xl font-semibold text-blue-600 mb-3">
+            Syntax Validation
+          </h3>
+          <p class="text-gray-600">
+            Validates JSON syntax and reports errors with line and column
+            numbers.
+          </p>
+        </div>
+        <div class="bg-white p-6 rounded-lg shadow-md">
+          <h3 class="text-xl font-semibold text-green-600 mb-3">
+            Pretty Printing
+          </h3>
+          <p class="text-gray-600">
+            Formats JSON with proper indentation and removes formatting errors.
+          </p>
+        </div>
+        <div class="bg-white p-6 rounded-lg shadow-md">
+          <h3 class="text-xl font-semibold text-purple-600 mb-3">
+            Token Tracking
+          </h3>
+          <p class="text-gray-600">
+            Records and displays detailed information about each token.
+          </p>
+        </div>
+        <div class="bg-white p-6 rounded-lg shadow-md">
+          <h3 class="text-xl font-semibold text-red-600 mb-3">
+            Element Statistics
+          </h3>
+          <p class="text-gray-600">
+            Counts objects, arrays, strings, numbers, booleans, and null values.
+          </p>
+        </div>
+        <div class="bg-white p-6 rounded-lg shadow-md">
+          <h3 class="text-xl font-semibold text-yellow-600 mb-3">
+            Enhanced Learning
+          </h3>
+          <p class="text-gray-600">
+            Demonstrates compiler phases: lexical analysis, parsing, and
+            validation.
+          </p>
+        </div>
+        <div class="bg-white p-6 rounded-lg shadow-md">
+          <h3 class="text-xl font-semibold text-indigo-600 mb-3">
+            User-Friendly Output
+          </h3>
+          <p class="text-gray-600">
+            Generates clean, human-readable formatted output.
+          </p>
+        </div>
+      </div>
+
+      <!-- Web-based Demo -->
+      <div class="bg-white rounded-lg shadow-md mb-8">
+        <div class="bg-indigo-600 text-white px-6 py-4">
+          <h3 class="text-xl font-semibold">Interactive JSON Compiler Demo</h3>
+        </div>
+        <div class="p-6">
+          <div class="grid lg:grid-cols-2 gap-6">
+            <!-- Input -->
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2"
+                >JSON Input:</label
+              >
+              <textarea
+                id="jsonInput"
+                class="w-full h-64 p-4 border border-gray-300 rounded-lg font-mono text-sm"
+                placeholder='Enter your JSON here...
+Example:
+{
+  "name": "John Doe",
+  "age": 30,
+  "city": "New York",
+  "hobbies": ["reading", "coding", "swimming"],
+  "married": true,
+  "spouse": null
+}'
+              ></textarea>
+              <div class="mt-4 flex gap-4">
+                <button
+                  onclick="compileJSON()"
+                  class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+                >
+                  Compile JSON
+                </button>
+                <button
+                  onclick="loadExample()"
+                  class="bg-gray-600 text-white px-6 py-2 rounded-lg hover:bg-gray-700 transition-colors"
+                >
+                  Load Example
+                </button>
+                <button
+                  onclick="clearAll()"
+                  class="bg-red-600 text-white px-6 py-2 rounded-lg hover:bg-red-700 transition-colors"
+                >
+                  Clear All
+                </button>
+              </div>
+            </div>
+
+            <!-- Output -->
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2"
+                >Compiled Output:</label
+              >
+              <div
+                id="output"
+                class="w-full h-64 p-4 border border-gray-300 rounded-lg bg-gray-50 font-mono text-sm overflow-auto"
+              ></div>
+            </div>
+          </div>
+
+          <!-- Token Analysis -->
+          <div class="mt-6">
+            <h4 class="text-lg font-semibold text-gray-800 mb-3">
+              Token Analysis
+            </h4>
+            <div
+              id="tokenAnalysis"
+              class="bg-gray-50 p-4 rounded-lg overflow-auto max-h-64"
+            ></div>
+          </div>
+
+          <!-- Statistics -->
+          <div class="mt-6">
+            <h4 class="text-lg font-semibold text-gray-800 mb-3">
+              Element Statistics
+            </h4>
+            <div
+              id="statistics"
+              class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4"
+            ></div>
+          </div>
+
+          <!-- Pretty Printed JSON -->
+          <div class="mt-6">
+            <h4 class="text-lg font-semibold text-gray-800 mb-3">
+              Pretty Printed JSON (output.json)
+            </h4>
+            <div
+              id="prettyPrinted"
+              class="bg-gray-900 text-green-400 p-4 rounded-lg font-mono text-sm overflow-auto max-h-64"
+            ></div>
+          </div>
+        </div>
+      </div>
+
+
+
+      <!-- Compiler Implementation -->
+      <div class="grid lg:grid-cols-2 gap-8 mb-8">
+        <!-- Lex File -->
+        <div class="bg-white rounded-lg shadow-md overflow-hidden">
+          <div class="bg-blue-600 text-white px-6 py-4">
+            <h3 class="text-xl font-semibold">json.l (Lexical Analyzer)</h3>
+          </div>
+          <div class="code-block p-6 text-sm">
+            <pre id="lexCode">
+%{
+#include "json.tab.h"
+#include &lt;stdio.h&gt;
+#include &lt;stdlib.h&gt;
+#include &lt;string.h&gt;
+
+int line_number = 1;
+int column_number = 1;
+int object_count = 0;
+int array_count = 0;
+int string_count = 0;
+int number_count = 0;
+int boolean_count = 0;
+int null_count = 0;
+
+void print_token(char* token_type, char* value);
+void update_position();
+%}
+
+%option noyywrap
+
+DIGIT       [0-9]
+INTEGER     {DIGIT}+
+FLOAT       {INTEGER}\.{INTEGER}
+NUMBER      {INTEGER}|{FLOAT}
+STRING      \"([^\\\"]|\\.)*\"
+WHITESPACE  [ \t\r]
+NEWLINE     \n
+
+%%
+
+{WHITESPACE}+   { column_number += yyleng; }
+{NEWLINE}       { line_number++; column_number = 1; }
+
+"{"             { 
+                    print_token("LBRACE", "{"); 
+                    update_position(); 
+                    object_count++; 
+                    return LBRACE; 
+                }
+"}"             { 
+                    print_token("RBRACE", "}"); 
+                    update_position(); 
+                    return RBRACE; 
+                }
+"["             { 
+                    print_token("LBRACKET", "["); 
+                    update_position(); 
+                    array_count++; 
+                    return LBRACKET; 
+                }
+"]"             { 
+                    print_token("RBRACKET", "]"); 
+                    update_position(); 
+                    return RBRACKET; 
+                }
+":"             { 
+                    print_token("COLON", ":"); 
+                    update_position(); 
+                    return COLON; 
+                }
+","             { 
+                    print_token("COMMA", ","); 
+                    update_position(); 
+                    return COMMA; 
+                }
+"true"          { 
+                    print_token("TRUE", "true"); 
+                    update_position(); 
+                    boolean_count++; 
+                    yylval.str = strdup(yytext); 
+                    return TRUE_TOKEN; 
+                }
+"false"         { 
+                    print_token("FALSE", "false"); 
+                    update_position(); 
+                    boolean_count++; 
+                    yylval.str = strdup(yytext); 
+                    return FALSE_TOKEN; 
+                }
+"null"          { 
+                    print_token("NULL", "null"); 
+                    update_position(); 
+                    null_count++; 
+                    yylval.str = strdup(yytext); 
+                    return NULL_TOKEN; 
+                }
+{STRING}        { 
+                    print_token("STRING", yytext); 
+                    update_position(); 
+                    string_count++; 
+                    yylval.str = strdup(yytext); 
+                    return STRING_TOKEN; 
+                }
+{NUMBER}        { 
+                    print_token("NUMBER", yytext); 
+                    update_position(); 
+                    number_count++; 
+                    yylval.str = strdup(yytext); 
+                    return NUMBER_TOKEN; 
+                }
+
+.               { 
+                    fprintf(stderr, "Unexpected character '%c' at line %d, column %d\n", 
+                            yytext[0], line_number, column_number); 
+                    exit(1); 
+                }
+
+%%
+
+void print_token(char* token_type, char* value) {
+    printf("Token: %-10s | Value: %-10s | Line: %d | Column: %d\n", 
+           token_type, value, line_number, column_number);
+}
+
+void update_position() {
+    column_number += yyleng;
+}
+
+void print_statistics() {
+    printf("\n=== ELEMENT COUNT STATISTICS ===\n");
+    printf("Objects:  %d\n", object_count);
+    printf("Arrays:   %d\n", array_count);
+    printf("Strings:  %d\n", string_count);
+    printf("Numbers:  %d\n", number_count);
+    printf("Booleans: %d\n", boolean_count);
+    printf("Nulls:    %d\n", null_count);
+    printf("================================\n");
+}</pre
+            >
+          </div>
+        </div>
+
+        <!-- Yacc File -->
+        <div class="bg-white rounded-lg shadow-md overflow-hidden">
+          <div class="bg-green-600 text-white px-6 py-4">
+            <h3 class="text-xl font-semibold">json.y (Parser)</h3>
+          </div>
+          <div class="code-block p-6 text-sm">
+            <pre id="yaccCode">
+%{
+#include &lt;stdio.h&gt;
+#include &lt;stdlib.h&gt;
+#include &lt;string.h&gt;
+
+void yyerror(const char *s);
+int yylex();
+extern int line_number;
+extern int column_number;
+extern void print_statistics();
+
+FILE *output_file;
+int indent_level = 0;
+
+void print_indent();
+void pretty_print(char *str);
+%}
+
+%union {
+    char *str;
+}
+
+%token &lt;str&gt; STRING_TOKEN NUMBER_TOKEN TRUE_TOKEN FALSE_TOKEN NULL_TOKEN
+%token LBRACE RBRACE LBRACKET RBRACKET COLON COMMA
+
+%type &lt;str&gt; json value object array members member elements
+
+%%
+
+json: value {
+        printf("\n=== JSON SYNTAX VALIDATION: SUCCESS ===\n");
+        printf("JSON is syntactically valid!\n");
+        printf("Pretty-printed output saved to 'output.json'\n");
+        print_statistics();
+        fprintf(output_file, "%s", $1);
+        fclose(output_file);
+    }
+    ;
+
+value: STRING_TOKEN {
+        $$ = malloc(strlen($1) + 1);
+        strcpy($$, $1);
+    }
+    | NUMBER_TOKEN {
+        $$ = malloc(strlen($1) + 1);
+        strcpy($$, $1);
+    }
+    | TRUE_TOKEN {
+        $$ = malloc(strlen($1) + 1);
+        strcpy($$, $1);
+    }
+    | FALSE_TOKEN {
+        $$ = malloc(strlen($1) + 1);
+        strcpy($$, $1);
+    }
+    | NULL_TOKEN {
+        $$ = malloc(strlen($1) + 1);
+        strcpy($$, $1);
+    }
+    | object {
+        $$ = $1;
+    }
+    | array {
+        $$ = $1;
+    }
+    ;
+
+object: LBRACE RBRACE {
+        $$ = malloc(10);
+        strcpy($$, "{}");
+    }
+    | LBRACE members RBRACE {
+        $$ = malloc(strlen($2) + 20);
+        sprintf($$, "{\n%s\n}", $2);
+    }
+    ;
+
+members: member {
+        $$ = $1;
+    }
+    | members COMMA member {
+        $$ = malloc(strlen($1) + strlen($3) + 10);
+        sprintf($$, "%s,\n%s", $1, $3);
+    }
+    ;
+
+member: STRING_TOKEN COLON value {
+        $$ = malloc(strlen($1) + strlen($3) + 10);
+        sprintf($$, "  %s: %s", $1, $3);
+    }
+    ;
+
+array: LBRACKET RBRACKET {
+        $$ = malloc(10);
+        strcpy($$, "[]");
+    }
+    | LBRACKET elements RBRACKET {
+        $$ = malloc(strlen($2) + 20);
+        sprintf($$, "[\n%s\n]", $2);
+    }
+    ;
+
+elements: value {
+        $$ = malloc(strlen($1) + 10);
+        sprintf($$, "  %s", $1);
+    }
+    | elements COMMA value {
+        $$ = malloc(strlen($1) + strlen($3) + 10);
+        sprintf($$, "%s,\n  %s", $1, $3);
+    }
+    ;
+
+%%
+
+void yyerror(const char *s) {
+    fprintf(stderr, "\n=== SYNTAX ERROR ===\n");
+    fprintf(stderr, "Error: %s at line %d, column %d\n", 
+            s, line_number, column_number);
+    fprintf(stderr, "====================\n");
+    exit(1);
+}
+
+int main() {
+    printf("=== JSON COMPILER USING LEX AND YACC ===\n");
+    printf("Starting compilation process...\n\n");
+    
+    output_file = fopen("output.json", "w");
+    if (!output_file) {
+        fprintf(stderr, "Error: Cannot create output file\n");
+        return 1;
+    }
+    
+    printf("=== TOKEN ANALYSIS ===\n");
+    yyparse();
+    return 0;
+}</pre
+            >
+          </div>
+        </div>
+      </div>
+
+
+    <script>
+      // JavaScript implementation for web demo
+      class JSONCompiler {
+        constructor() {
+          this.tokens = [];
+          this.statistics = {
+            objects: 0,
+            arrays: 0,
+            strings: 0,
+            numbers: 0,
+            booleans: 0,
+            nulls: 0,
+          };
+          this.line = 1;
+          this.column = 1;
+        }
+
+        reset() {
+          this.tokens = [];
+          this.statistics = {
+            objects: 0,
+            arrays: 0,
+            strings: 0,
+            numbers: 0,
+            booleans: 0,
+            nulls: 0,
+          };
+          this.line = 1;
+          this.column = 1;
+        }
+
+        tokenize(input) {
+          const tokens = [];
+          let i = 0;
+          let line = 1;
+          let column = 1;
+
+          while (i < input.length) {
+            const char = input[i];
+
+            // Skip whitespace
+            if (/\s/.test(char)) {
+              if (char === "\n") {
+                line++;
+                column = 1;
+              } else {
+                column++;
+              }
+              i++;
+              continue;
+            }
+
+            // Single character tokens
+            const singleTokens = {
+              "{": "LBRACE",
+              "}": "RBRACE",
+              "[": "LBRACKET",
+              "]": "RBRACKET",
+              ":": "COLON",
+              ",": "COMMA",
+            };
+
+            if (singleTokens[char]) {
+              tokens.push({
+                type: singleTokens[char],
+                value: char,
+                line: line,
+                column: column,
+              });
+
+              if (char === "{") this.statistics.objects++;
+              if (char === "[") this.statistics.arrays++;
+
+              column++;
+              i++;
+              continue;
+            }
+
+            // String tokens
+            if (char === '"') {
+              let str = '"';
+              i++;
+              column++;
+              while (i < input.length && input[i] !== '"') {
+                if (input[i] === "\\" && i + 1 < input.length) {
+                  str += input[i] + input[i + 1];
+                  i += 2;
+                  column += 2;
+                } else {
+                  str += input[i];
+                  i++;
+                  column++;
+                }
+              }
+              if (i < input.length) {
+                str += '"';
+                i++;
+                column++;
+              }
+
+              tokens.push({
+                type: "STRING",
+                value: str,
+                line: line,
+                column: column - str.length,
+              });
+              this.statistics.strings++;
+              continue;
+            }
+
+            // Number tokens
+            if (/[0-9\-]/.test(char)) {
+              let num = "";
+              let startColumn = column;
+              while (i < input.length && /[0-9\-\.]/.test(input[i])) {
+                num += input[i];
+                i++;
+                column++;
+              }
+
+              tokens.push({
+                type: "NUMBER",
+                value: num,
+                line: line,
+                column: startColumn,
+              });
+              this.statistics.numbers++;
+              continue;
+            }
+
+            // Keyword tokens
+            const keywords = ["true", "false", "null"];
+            let foundKeyword = false;
+
+            for (const keyword of keywords) {
+              if (input.substr(i, keyword.length) === keyword) {
+                tokens.push({
+                  type: keyword.toUpperCase(),
+                  value: keyword,
+                  line: line,
+                  column: column,
+                });
+
+                if (keyword === "true" || keyword === "false") {
+                  this.statistics.booleans++;
+                } else if (keyword === "null") {
+                  this.statistics.nulls++;
+                }
+
+                i += keyword.length;
+                column += keyword.length;
+                foundKeyword = true;
+                break;
+              }
+            }
+
+            if (!foundKeyword) {
+              throw new Error(
+                `Unexpected character '${char}' at line ${line}, column ${column}`
+              );
+            }
+          }
+
+          return tokens;
+        }
+
+        parse(input) {
+          this.reset();
+
+          try {
+            // Validate JSON syntax
+            const parsed = JSON.parse(input);
+
+            // Tokenize
+            this.tokens = this.tokenize(input);
+
+            // Pretty print
+            const prettyPrinted = JSON.stringify(parsed, null, 2);
+
+            return {
+              success: true,
+              tokens: this.tokens,
+              statistics: this.statistics,
+              prettyPrinted: prettyPrinted,
+              parsed: parsed,
+            };
+          } catch (error) {
+            return {
+              success: false,
+              error: error.message,
+              tokens: [],
+              statistics: this.statistics,
+              prettyPrinted: "",
+              parsed: null,
+            };
+          }
+        }
+      }
+
+      const compiler = new JSONCompiler();
+
+      function compileJSON() {
+        const input = document.getElementById("jsonInput").value.trim();
+        const outputDiv = document.getElementById("output");
+        const tokenAnalysisDiv = document.getElementById("tokenAnalysis");
+        const statisticsDiv = document.getElementById("statistics");
+        const prettyPrintedDiv = document.getElementById("prettyPrinted");
+
+        if (!input) {
+          outputDiv.innerHTML =
+            '<span class="text-red-600">Please enter JSON input</span>';
+          return;
+        }
+
+        const result = compiler.parse(input);
+
+        if (result.success) {
+          outputDiv.innerHTML = `
+                    <div class="success-highlight p-3 rounded">
+                        <strong>✓ JSON COMPILATION SUCCESSFUL</strong><br>
+                        JSON is syntactically valid!<br>
+                        Pretty-printed output generated.
+                    </div>
+                `;
+
+          // Display tokens
+          let tokenHTML = '<div class="font-mono text-sm">';
+          tokenHTML += '<div class="font-bold mb-2">TOKEN ANALYSIS:</div>';
+          result.tokens.forEach((token) => {
+            tokenHTML += `
+                        <div class="mb-1">
+                            <span class="token-highlight">${token.type}</span>
+                            <span class="text-gray-600">Value: ${token.value}</span>
+                            <span class="text-gray-500">Line: ${token.line}, Column: ${token.column}</span>
+                        </div>
+                    `;
+          });
+          tokenHTML += "</div>";
+          tokenAnalysisDiv.innerHTML = tokenHTML;
+
+          // Display statistics
+          statisticsDiv.innerHTML = `
+                    <div class="bg-blue-100 p-3 rounded text-center">
+                        <div class="font-semibold text-blue-800">Objects</div>
+                        <div class="text-2xl font-bold text-blue-600">${result.statistics.objects}</div>
+                    </div>
+                    <div class="bg-green-100 p-3 rounded text-center">
+                        <div class="font-semibold text-green-800">Arrays</div>
+                        <div class="text-2xl font-bold text-green-600">${result.statistics.arrays}</div>
+                    </div>
+                    <div class="bg-yellow-100 p-3 rounded text-center">
+                        <div class="font-semibold text-yellow-800">Strings</div>
+                        <div class="text-2xl font-bold text-yellow-600">${result.statistics.strings}</div>
+                    </div>
+                    <div class="bg-purple-100 p-3 rounded text-center">
+                        <div class="font-semibold text-purple-800">Numbers</div>
+                        <div class="text-2xl font-bold text-purple-600">${result.statistics.numbers}</div>
+                    </div>
+                    <div class="bg-indigo-100 p-3 rounded text-center">
+                        <div class="font-semibold text-indigo-800">Booleans</div>
+                        <div class="text-2xl font-bold text-indigo-600">${result.statistics.booleans}</div>
+                    </div>
+                    <div class="bg-gray-100 p-3 rounded text-center">
+                        <div class="font-semibold text-gray-800">Nulls</div>
+                        <div class="text-2xl font-bold text-gray-600">${result.statistics.nulls}</div>
+                    </div>
+                `;
+
+          // Display pretty printed JSON
+          prettyPrintedDiv.innerHTML = `<pre>${result.prettyPrinted}</pre>`;
+        } else {
+          outputDiv.innerHTML = `
+                    <div class="error-highlight p-3 rounded">
+                        <strong>✗ JSON COMPILATION FAILED</strong><br>
+                        Syntax Error: ${result.error}
+                    </div>
+                `;
+          tokenAnalysisDiv.innerHTML =
+            '<div class="text-gray-500">No tokens generated due to syntax error</div>';
+          statisticsDiv.innerHTML =
+            '<div class="text-gray-500 col-span-full text-center">No statistics available due to syntax error</div>';
+          prettyPrintedDiv.innerHTML =
+            '<div class="text-red-400">No output generated due to syntax error</div>';
+        }
+      }
+
+      function loadExample() {
+        const exampleJSON = `{
+  "name": "John Doe",
+  "age": 30,
+  "city": "New York",
+  "address": {
+    "street": "123 Main St",
+    "zipcode": "10001",
+    "country": "USA"
+  },
+  "hobbies": ["reading", "coding", "swimming"],
+  "married": true,
+  "spouse": null,
+  "salary": 75000.50,
+  "languages": ["English", "Spanish"],
+  "education": {
+    "degree": "Computer Science",
+    "university": "MIT",
+    "graduated": true,
+    "gpa": 3.8
+  }
+}`;
+        document.getElementById("jsonInput").value = exampleJSON;
+      }
+
+      function clearAll() {
+        document.getElementById("jsonInput").value = "";
+        document.getElementById("output").innerHTML = "";
+        document.getElementById("tokenAnalysis").innerHTML = "";
+        document.getElementById("statistics").innerHTML = "";
+        document.getElementById("prettyPrinted").innerHTML = "";
+      }
+
+      // Load example on page load
+      window.addEventListener("load", loadExample);
+    </script>
+  </body>
+</html>
